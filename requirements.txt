@@ -1,8 +1,20 @@
-google-adk>=2.8.0
-lancedb>=0.38.0
-docling>=2.126.0
-sentence-transformers>=6.0.0
-transformers>=5.16.0
-torch>=2.11.0
-pyarrow>=16
-numpy>=1.24
+# Agent framework (chat UI via `adk web`)
+google-adk
+litellm
+
+# LLM served locally over an OpenAI-compatible API
+transformers[serving]
+accelerate
+
+# Document parsing
+docling
+
+# Embeddings (BAAI/bge-small-en-v1.5)
+sentence-transformers
+
+# Embedded vector store, no server
+lancedb
+
+numpy
+pyarrow
+python-dotenv

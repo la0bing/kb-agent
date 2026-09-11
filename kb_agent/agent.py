@@ -1,9 +1,10 @@
 import os
 
 from google.adk.agents import Agent
+from google.adk.models.lite_llm import LiteLlm
 
 from kb_agent import store
-from kb_agent.qwen import QwenLocal
+from kb_agent.llm import LLM_API_BASE, LLM_API_KEY, LLM_MODEL
 
 
 def search_kb(query: str, topic: str, top_k: int) -> dict:
@@ -89,7 +90,11 @@ def ingest_path(path: str) -> dict:
 
 root_agent = Agent(
     name="kb_agent",
-    model=QwenLocal(),
+    model=LiteLlm(
+        model="openai/" + LLM_MODEL,
+        api_base=LLM_API_BASE,
+        api_key=LLM_API_KEY,
+    ),
     description="Answers questions from a local knowledge base of ingested documents.",
     instruction=(
         "You are a knowledge base assistant.\n"

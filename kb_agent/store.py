@@ -84,13 +84,13 @@ def pick_topic(centroid, text):
         if scores[best] >= TOPIC_THRESHOLD:
             return known[best]["name"]
 
-    from kb_agent import qwen
+    from kb_agent import llm
 
     prompt = (
         "Give a short subject label of 2 to 4 words for the document below. "
         "Reply with the label only, no punctuation.\n\n"
     )
-    label = qwen.ask(prompt + text[:1500], max_new_tokens=16).strip().strip("\"'.")
+    label = llm.ask(prompt + text[:1500], max_tokens=32).strip().strip("\"'.")
     label = label.splitlines()[0][:60] if label else ""
     if not label:
         return ""
@@ -147,6 +147,8 @@ def sql(value):
 
 
 def search(query, topic="", top_k=5):
+    # the served model hands numbers back as strings
+    top_k = int(top_k or 5)
     q = chunks().search(embed_query(query).tolist()).limit(max(1, top_k))
     if topic:
         q = q.where("topic = " + sql(topic))
