@@ -8,49 +8,54 @@ Everything runs on your machine. No API keys, no calls off the box.
 
 ## Setup
 
+### 1. Install
+
 ```
 pip install -r requirements.txt
 cp .env.example .env
 ```
 
-The two models are pulled from Hugging Face the first time they are used
-(Qwen3.5-2B is about 4.3 GB, bge-small is about 130 MB).
+Both models download from Hugging Face on first use (Qwen3.5-2B is about
+4.3 GB, bge-small about 130 MB).
 
-## Running
-
-Two terminals. `transformers serve` and `adk web` both default to port 8000, so
-the chat UI is moved to 8080.
-
-### Terminal 1 - the LLM
+### 2. Start the LLM — terminal 1
 
 ```
 transformers serve Qwen/Qwen3.5-2B --dtype bfloat16 --reasoning off
 ```
 
-Passing the model as a positional argument preloads it and keeps it in memory
-so it is never unloaded between questions. `--reasoning off` turns off
-Qwen3.5's thinking traces, which makes replies faster and the trace view
-cleaner. Short on VRAM? Add `--quantization bnb-4bit`.
+Leave this running. Check it with `curl http://localhost:8000/v1/models`.
 
-Check it is up with `curl http://localhost:8000/v1/models`.
+Passing the model as a positional argument preloads it so it is never unloaded
+between questions, and `--reasoning off` drops Qwen3.5's thinking traces for
+faster replies. Short on VRAM? Add `--quantization bnb-4bit`.
 
-### Terminal 2 - the agent
+### 3. Ingest your documents — terminal 2
+
+```
+python ingest.py C:\my\documents
+```
+
+Point it at a folder or a single file. This needs terminal 1 already running,
+because it asks the model to name each new topic — add `--no-topics` to skip
+that and run it without the server.
+
+### 4. Start the chat UI — terminal 2
 
 ```
 adk web --port 8080
 ```
 
-Open the URL it prints and pick `kb_agent`. `adk run kb_agent` gives the same
-agent in the terminal.
+Open the URL it prints and pick `kb_agent`. Port 8080 because `transformers
+serve` already has 8000. `adk run kb_agent` gives the same agent in the
+terminal instead.
 
 ## Ingesting
 
-Point it at a folder or a single file:
-
 ```
-python ingest.py C:\my\documents
-python ingest.py report.pdf
-python ingest.py C:\my\documents --no-topics
+python ingest.py C:\my\documents          # a whole folder, recursively
+python ingest.py report.pdf               # one file
+python ingest.py C:\my\docs --no-topics   # skip topic grouping
 ```
 
 Every format docling supports is accepted (pdf, docx, pptx, xlsx, html, md,
@@ -58,9 +63,10 @@ csv, epub, images and more) except audio and video, which need the extra
 `docling[asr]` install and ffmpeg. Re-ingesting a file replaces its old chunks
 rather than duplicating them.
 
-## Tools
+You can also just ask the agent in chat: "ingest C:\my\documents". It calls the
+same code as the script, so both behave identically.
 
-The agent has five tools:
+## Tools
 
 | tool | what it does |
 | --- | --- |
@@ -70,20 +76,16 @@ The agent has five tools:
 | `delete_document` | removes a document and all of its chunks |
 | `ingest_path` | adds a file or folder, using the same code path as `ingest.py` |
 
-Because `ingest_path` calls the same `store.ingest_file` that the script uses,
-ingesting from chat and ingesting from the command line behave identically.
-
 ## Topics
 
 Ingestion groups documents into subjects on its own. Each document's chunk
-vectors are averaged into a single centroid, and if that centroid is at least
-80% similar to a topic already in the store the document joins it. Otherwise
-the model is asked for a short label and a new topic is created. Nobody has to
-name anything, and the model is only called when a genuinely new subject shows
-up. Pass `--no-topics` to skip it.
+vectors are averaged into one centroid, and if that centroid is at least 80%
+similar to a topic already stored the document joins it. Otherwise the model is
+asked for a short label and a new topic starts. Nobody has to name anything,
+and the model is only called for genuinely new subjects.
 
-Once documents are grouped you can narrow a search to one subject, either by
-asking the agent or directly:
+Once grouped you can narrow a search to one subject, either by asking the agent
+or directly:
 
 ```python
 from kb_agent import store
@@ -101,15 +103,15 @@ ingest.py     the bulk ingestion script
 kbdata/       the LanceDB database, created on first use
 ```
 
-`adk web` needs the agent to live in a package directory whose name is a valid
-Python identifier, which is why `kb_agent/` exists rather than the files
-sitting at the repo root.
+`adk web` needs the agent in a package directory whose name is a valid Python
+identifier, which is why `kb_agent/` exists rather than the files sitting at
+the repo root.
 
 ## Notes
 
-The agent talks to the model over an OpenAI-compatible API, so anything that
-speaks that protocol works. Point `LLM_API_BASE` at Ollama, llama.cpp or vLLM
-instead and nothing else has to change. The settings live in `.env`:
+The agent talks to the model over an OpenAI-compatible API, so anything
+speaking that protocol works — point `LLM_API_BASE` at Ollama, llama.cpp or
+vLLM and nothing else changes. Settings live in `.env`:
 
 ```
 LLM_MODEL=Qwen/Qwen3.5-2B
