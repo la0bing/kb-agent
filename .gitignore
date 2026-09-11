@@ -1,0 +1,5 @@
+kbdata/
+__pycache__/
+*.pyc
+.env
+.adk/
