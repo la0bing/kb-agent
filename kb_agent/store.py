@@ -22,6 +22,8 @@ DB_PATH = os.environ.get("KB_DB_PATH", os.path.join(os.path.dirname(os.path.dirn
 QUERY_PREFIX = "Represent this sentence for searching relevant passages: "
 # documents whose content is at least this similar are treated as the same subject
 TOPIC_THRESHOLD = 0.80
+# search results below this similarity are dropped instead of reaching the model
+MIN_SCORE = 0.60
 
 # docling can read these, but audio/video also need the asr extra plus ffmpeg
 SKIP_EXTS = {".wav", ".mp3", ".m4a", ".aac", ".ogg", ".flac", ".mp4", ".avi", ".mov", ".mkv", ".webm", ".tar.gz"}
@@ -68,6 +70,10 @@ def embed(texts):
 
 def embed_query(text):
     return embed([QUERY_PREFIX + text])[0]
+
+
+def cosine(distance):
+    return round(1 - distance / 2, 3)
 
 
 def supported(path):
@@ -154,6 +160,10 @@ def search(query, topic="", top_k=5):
         q = q.where("topic = " + sql(topic))
     hits = []
     for row in q.to_list():
+        score = cosine(row["_distance"])
+        # rows come back nearest first, so the rest are weaker still
+        if score < MIN_SCORE:
+            break
         hits.append({
             "id": row["id"],
             "source": row["source"],
@@ -161,7 +171,7 @@ def search(query, topic="", top_k=5):
             "pages": row["pages"],
             "topic": row["topic"],
             "text": row["text"],
-            "score": round(1 - row["_distance"] / 2, 3),
+            "score": score,
         })
     return hits
 

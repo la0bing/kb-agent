@@ -122,4 +122,9 @@ LLM_API_KEY=not-needed
 A 2B model hands tool arguments back as strings even when the schema says
 integer, so `store.search` casts `top_k` itself.
 
+Search drops anything scoring below `store.MIN_SCORE` (0.60) rather than
+handing weak passages to the model, which is what lets it say it found nothing.
+Raise or lower it once you have enough documents to see where real answers
+land — `python evals/test_retrieval.py` prints the scores.
+
 Set `KB_DB_PATH` to put the database somewhere other than `./kbdata`.
