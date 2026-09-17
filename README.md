@@ -76,6 +76,45 @@ same code as the script, so both behave identically.
 | `delete_document` | removes a document and all of its chunks |
 | `ingest_path` | adds a file or folder, using the same code path as `ingest.py` |
 
+## Demo
+
+Three short sessions in `adk web`. The repo ships one document in `evals/docs`,
+so they work on a fresh checkout with nothing of your own ingested.
+
+### 1. Ask the knowledge base
+
+| prompt | what to expect |
+| --- | --- |
+| `ingest C:\path\to\kb-agent\evals\docs` | calls `ingest_path`, reports `student_handbook.md` and 5 chunks |
+| `what is the minimum attendance to sit for the final exam?` | calls `search_kb`, answers 80% and names `student_handbook.md` |
+| `what happens if my CGPA drops below 2.00?` | academic probation and a meeting with an advisor, from the same source |
+
+The whole loop: docling parses the file, the chunks are embedded, and the
+answer comes back with the source named rather than from the model's memory.
+
+### 2. It will not guess
+
+| prompt | what to expect |
+| --- | --- |
+| `how do I claim mileage for driving to work?` | nothing scores above `MIN_SCORE`, so it says it found nothing |
+| `what documents do you have?` | calls `get_document`, lists the handbook and its topic |
+
+The handbook says nothing about mileage. Without the score threshold the
+search would still return five passages and a 2B model would try to answer
+from them, so this is the prompt worth showing.
+
+### 3. Fix a wrong fact
+
+| prompt | what to expect |
+| --- | --- |
+| `show me the chunks in student_handbook.md` | calls `get_document`, lists all 5 chunks with their ids |
+| `change the attendance requirement to 75% in chunk <id>` | calls `edit_document`, confirms the chunk was updated |
+| `what is the minimum attendance now?` | answers 75% |
+
+The last prompt is the point. A stored edit that was not re-embedded would
+still answer 80%, so asking again is what proves the new text is searchable.
+`delete student_handbook.md` clears it afterwards.
+
 ## Topics
 
 Ingestion groups documents into subjects on its own. Each document's chunk
