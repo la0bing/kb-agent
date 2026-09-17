@@ -33,12 +33,13 @@ faster replies. Short on VRAM? Add `--quantization bnb-4bit`.
 ### 3. Ingest your documents — terminal 2
 
 ```
-python ingest.py C:\my\documents
+python ingest.py
 ```
 
-Point it at a folder or a single file. This needs terminal 1 already running,
-because it asks the model to name each new topic — add `--no-topics` to skip
-that and run it without the server.
+With no argument it reads `docs/`; pass a path to point it at another folder
+or a single file. This needs terminal 1 already running, because it asks the
+model to name each new topic — add `--no-topics` to skip that and run it
+without the server.
 
 ### 4. Start the chat UI — terminal 2
 
@@ -53,7 +54,8 @@ terminal instead.
 ## Ingesting
 
 ```
-python ingest.py C:\my\documents          # a whole folder, recursively
+python ingest.py                          # docs/, recursively
+python ingest.py C:\my\documents          # any other folder
 python ingest.py report.pdf               # one file
 python ingest.py C:\my\docs --no-topics   # skip topic grouping
 ```

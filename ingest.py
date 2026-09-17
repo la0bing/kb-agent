@@ -10,11 +10,8 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     with_topics = "--no-topics" not in sys.argv
-    if not args:
-        print("usage: python ingest.py <directory or file> [--no-topics]")
-        return
 
-    root = args[0]
+    root = args[0] if args else "docs"
     if os.path.isfile(root):
         targets = [root]
     else:
